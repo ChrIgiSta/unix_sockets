@@ -15,27 +15,31 @@ This package contains easy to use unix sockets.
 ```go
 package main
 
-import github.com/ChrIgiSta/unix_sockets
+import (
+	"log"
+	"sync"
+
+	"github.com/ChrIgiSta/unix_sockets"
+)
 
 func main() {
-    var wg sync.WaitGroup = sync.WaitGroup{}
-    defer wg.Wait()
+	var wg sync.WaitGroup = sync.WaitGroup{}
+	defer wg.Wait()
 
-    s := unix_sockets.NewUnixSocketServer("/tmp/mySocket.sock") // create a socket server
-    wg.Add(1)
-    rxCh, err := s.ListenReceive(&wg)                           // start listen
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer s.Shutdown()
+	s := unix_sockets.NewUnixSocketServer("/tmp/mySocket.sock") // create a socket server
+	wg.Add(1)
+	rxCh, err := s.ListenReceive(&wg) // start listen
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer s.Shutdown()
 
+	msg, ok := <-rxCh // recieve some data
+	if !ok {
+		return
+	}
 
-    msg, ok := <-rxCh                                       // recieve some data
-    if !ok {
-        return
-    }
-        
-    s.SendAll(msg)                                          // send some data
+	s.SendAll(msg) // send some data
 }
 ```
 
@@ -43,25 +47,32 @@ func main() {
 ```go
 package main
 
-import github.com/ChrIgiSta/unix_sockets
+import (
+	"fmt"
+	"log"
+	"sync"
+
+	"github.com/ChrIgiSta/unix_sockets"
+)
 
 func main() {
-    var wg sync.WaitGroup = sync.WaitGroup{}
-    defer wg.Wait()
+	var wg sync.WaitGroup = sync.WaitGroup{}
+	defer wg.Wait()
 
-    c := unix_sockets.NewUnixSocketClient()
-    wg.Add(1)
-	rxCh, err := c.Connect(&wg, "/tmp/mySocket.sock")   // create a socket client
-    if err != nil {
+	c := unix_sockets.NewUnixSocketClient()
+	wg.Add(1)
+	rxCh, err := c.Connect(&wg, "/tmp/mySocket.sock") // create a socket client
+	if err != nil {
 		log.Fatal(err)
 	}
-    defer c.Disconnect()
+	defer c.Disconnect()
 
-    err = c.Send([]byte("Hello World!"))                // send some data
+	err = c.Send([]byte("Hello World!")) // send some data
 	if err != nil {
 		log.Fatal(err)
 	}
 
-    msg := <-rxCh                                       // recieve some data
+	msg := <-rxCh // recieve some data
+	fmt.Println(msg)
 }
 ```
